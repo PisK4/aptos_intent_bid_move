@@ -1,3 +1,9 @@
 .aptos/
 build/
 .venv/
+.claude/
+.cursor/
+ref/
+issues/
+docs/
+CLAUDE.md
