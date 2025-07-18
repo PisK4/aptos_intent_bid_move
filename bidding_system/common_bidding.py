@@ -1,21 +1,18 @@
 """
-Aptos Bidding System - 通用模块
+A2A-Aptos Bidding System - 通用模块
 基于 bidding_system.move 的 Python SDK 辅助工具
 """
 
 import yaml
 import os
-from aptos_sdk.async_client import RestClient, ClientConfig
+from aptos_sdk.async_client import RestClient
 from aptos_sdk.account import Account
 
 # --- 配置 ---
 
 # Devnet的节点和Faucet URL
-NODE_URL = "https://api.devnet.aptoslabs.com/v1"
+NODE_URL = "https://fullnode.devnet.aptoslabs.com/v1"
 FAUCET_URL = "https://faucet.devnet.aptoslabs.com"
-
-# API Key for rate limiting
-API_KEY = "aptoslabs_ZYXEWFj9U8Y_KzPc9M8Z7N42zdvZKuRWwLMARnskLzTTh"
 
 # 默认的配置文件路径
 DEFAULT_PROFILE = "task_manager_dev"
@@ -50,7 +47,7 @@ def load_account_from_profile(profile: str) -> Account:
     
     # 也检查当前目录的 .aptos 配置
     current_config_path = os.path.join(".aptos", "config.yaml")
-    global_config_path = os.path.expanduser("~/.aptos/config.yaml")
+    global_config_path = os.path.expanduser(".aptos/config.yaml")
     
     config_path = ""
 
@@ -89,12 +86,7 @@ async def get_client_and_account(profile: str = DEFAULT_PROFILE) -> tuple[RestCl
     返回:
         一个元组 (RestClient, Account)
     """
-    # 创建带有API key的ClientConfig
-    client_config = ClientConfig(api_key=API_KEY)
-    
-    # 创建RestClient实例
-    client = RestClient(NODE_URL, client_config)
-    
+    client = RestClient(NODE_URL)
     account = load_account_from_profile(profile)
     return client, account
 
