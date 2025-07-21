@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Aptos Bidding System - 取消任务脚本
-Personal Agent 取消任务并获得全额退款
+Aptos Bidding System - Cancel Task Script
+Personal Agent cancels task and receives full refund
 """
 
 import argparse
@@ -26,87 +26,87 @@ async def cancel_task(
     platform_addr: str,
     task_id: str,
 ):
-    """取消任务并获得全额退款"""
+    """Cancel task and receive full refund"""
     
     client, creator_account = await get_client_and_account(profile)
     creator_addr = str(creator_account.address())
     
     print("=" * 50)
-    print("取消任务")
+    print("Cancel Task")
     print("=" * 50)
-    print(f"创建者: {creator_addr}")
-    print(f"平台地址: {platform_addr}")
-    print(f"任务 ID: {task_id}")
+    print(f"Creator: {creator_addr}")
+    print(f"Platform Address: {platform_addr}")
+    print(f"Task ID: {task_id}")
     print("")
     
     try:
-        # 将任务ID转换为字节数组
+        # Convert task ID to byte array
         task_id_bytes = format_task_id(task_id)
         
-        # 构建交易Payload
+        # Build transaction payload
         payload = EntryFunction.natural(
             f"{platform_addr}::bidding_system",
             "cancel_task",
-            [], # 无类型参数
+            [], # No type parameters
             [
                 TransactionArgument(AccountAddress.from_str(platform_addr), Serializer.struct),
                 TransactionArgument(task_id_bytes, Serializer.sequence_serializer(Serializer.u8)),
             ],
         )
         
-        # 生成并签名交易
+        # Generate and sign transaction
         signed_transaction = await client.create_bcs_signed_transaction(
             creator_account, TransactionPayload(payload)
         )
         
-        # 提交交易
+        # Submit transaction
         txn_hash = await client.submit_bcs_transaction(signed_transaction)
-        print(f"交易提交中... 哈希: {txn_hash}")
+        print(f"Submitting transaction... Hash: {txn_hash}")
         
-        # 等待交易确认
+        # Wait for transaction confirmation
         await client.wait_for_transaction(txn_hash)
         tx_info = await client.transaction_by_hash(txn_hash)
         
-        print(f"任务取消成功! 交易版本: {tx_info['version']}")
+        print(f"Task cancellation successful! Transaction version: {tx_info['version']}")
         print("")
-        print("任务已取消，处理结果：")
-        print("- 全额资金已退还给任务创建者")
-        print("- 任务状态更新为 CANCELLED")
-        print("- 所有竞标记录已清除")
+        print("Task has been cancelled, processing results:")
+        print("- Full funds have been refunded to task creator")
+        print("- Task status updated to CANCELLED")
+        print("- All bid records have been cleared")
         
         return True
         
     except Exception as e:
-        print(f"任务取消失败: {e}")
+        print(f"Task cancellation failed: {e}")
         return False
     finally:
         await client.close()
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="取消任务并获得全额退款")
-    parser.add_argument("task_id", type=str, help="任务的唯一ID")
+    parser = argparse.ArgumentParser(description="Cancel task and receive full refund")
+    parser.add_argument("task_id", type=str, help="Unique ID of the task")
     parser.add_argument(
         "--profile",
         default=DEFAULT_PROFILE,
-        help=f"指定 Aptos CLI 配置文件 (默认: {DEFAULT_PROFILE})"
+        help=f"Specify Aptos CLI profile (default: {DEFAULT_PROFILE})"
     )
     parser.add_argument(
         "--platform",
-        help="平台地址 (默认从profile获取)"
+        help="Platform address (default from profile)"
     )
     
     args = parser.parse_args()
     
-    # 获取平台地址
+    # Get platform address
     platform_addr = args.platform if args.platform else get_platform_address(args.profile)
     
-    # 验证参数
+    # Validate parameters
     if len(args.task_id.strip()) == 0:
-        print("错误: 任务ID不能为空")
+        print("Error: Task ID cannot be empty")
         return
     
-    # 取消任务
+    # Cancel task
     success = await cancel_task(
         args.profile,
         platform_addr,
@@ -114,9 +114,9 @@ async def main():
     )
     
     if success:
-        print("任务取消完成!")
+        print("Task cancellation complete!")
     else:
-        print("任务取消失败!")
+        print("Task cancellation failed!")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Aptos Bidding System - 选择中标者脚本
-Personal Agent 选择任务的中标者
+Aptos Bidding System - Select Winner Script
+Personal Agent selects the winner for a task
 """
 
 import argparse
@@ -26,85 +26,85 @@ async def select_winner(
     platform_addr: str,
     task_id: str,
 ):
-    """选择任务的中标者"""
+    """Select the winner for a task"""
     
     client, executor_account = await get_client_and_account(profile)
     executor_addr = str(executor_account.address())
     
     print("=" * 50)
-    print("选择中标者")
+    print("Select Winner")
     print("=" * 50)
-    print(f"执行者: {executor_addr}")
-    print(f"平台地址: {platform_addr}")
-    print(f"任务 ID: {task_id}")
+    print(f"Executor: {executor_addr}")
+    print(f"Platform Address: {platform_addr}")
+    print(f"Task ID: {task_id}")
     print("")
     
     try:
-        # 将任务ID转换为字节数组
+        # Convert task ID to byte array
         task_id_bytes = format_task_id(task_id)
         
-        # 构建交易Payload
+        # Build transaction payload
         payload = EntryFunction.natural(
             f"{platform_addr}::bidding_system",
             "select_winner",
-            [], # 无类型参数
+            [], # No type parameters
             [
                 TransactionArgument(AccountAddress.from_str(platform_addr), Serializer.struct),
                 TransactionArgument(task_id_bytes, Serializer.sequence_serializer(Serializer.u8)),
             ],
         )
         
-        # 生成并签名交易
+        # Generate and sign transaction
         signed_transaction = await client.create_bcs_signed_transaction(
             executor_account, TransactionPayload(payload)
         )
         
-        # 提交交易
+        # Submit transaction
         txn_hash = await client.submit_bcs_transaction(signed_transaction)
-        print(f"交易提交中... 哈希: {txn_hash}")
+        print(f"Submitting transaction... Hash: {txn_hash}")
         
-        # 等待交易确认
+        # Wait for transaction confirmation
         await client.wait_for_transaction(txn_hash)
         tx_info = await client.transaction_by_hash(txn_hash)
         
-        print(f"中标者选择成功! 交易版本: {tx_info['version']}")
+        print(f"Winner selection successful! Transaction version: {tx_info['version']}")
         print("")
-        print("已根据价格和声誉评分选择最佳竞标者。")
-        print("中标者现在可以开始执行任务并在完成后调用 complete_task。")
+        print("Best bidder selected based on price and reputation score.")
+        print("Winner can now start executing the task and call complete_task when finished.")
         
         return True
         
     except Exception as e:
-        print(f"选择中标者失败: {e}")
+        print(f"Winner selection failed: {e}")
         return False
     finally:
         await client.close()
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="选择任务的中标者")
-    parser.add_argument("task_id", type=str, help="任务的唯一ID")
+    parser = argparse.ArgumentParser(description="Select the winner for a task")
+    parser.add_argument("task_id", type=str, help="Unique ID of the task")
     parser.add_argument(
         "--profile",
         default=DEFAULT_PROFILE,
-        help=f"指定 Aptos CLI 配置文件 (默认: {DEFAULT_PROFILE})"
+        help=f"Specify Aptos CLI profile (default: {DEFAULT_PROFILE})"
     )
     parser.add_argument(
         "--platform",
-        help="平台地址 (默认从profile获取)"
+        help="Platform address (default from profile)"
     )
     
     args = parser.parse_args()
     
-    # 获取平台地址
+    # Get platform address
     platform_addr = args.platform if args.platform else get_platform_address(args.profile)
     
-    # 验证参数
+    # Validate parameters
     if len(args.task_id.strip()) == 0:
-        print("错误: 任务ID不能为空")
+        print("Error: Task ID cannot be empty")
         return
     
-    # 选择中标者
+    # Select winner
     success = await select_winner(
         args.profile,
         platform_addr,
@@ -112,9 +112,9 @@ async def main():
     )
     
     if success:
-        print("中标者选择完成!")
+        print("Winner selection complete!")
     else:
-        print("中标者选择失败!")
+        print("Winner selection failed!")
 
 
 if __name__ == "__main__":

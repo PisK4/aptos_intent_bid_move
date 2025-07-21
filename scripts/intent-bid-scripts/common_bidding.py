@@ -1,6 +1,6 @@
 """
-Aptos Bidding System - 通用模块
-基于 bidding_system.move 的 Python SDK 辅助工具
+Aptos Bidding System - Common Module
+Python SDK helper tools based on bidding_system.move
 """
 
 import yaml
@@ -8,28 +8,28 @@ import os
 from aptos_sdk.async_client import RestClient, ClientConfig
 from aptos_sdk.account import Account
 
-# --- 配置 ---
+# --- Configuration ---
 
-# Devnet的节点和Faucet URL
+# Devnet node and Faucet URLs
 NODE_URL = "https://api.devnet.aptoslabs.com/v1"
 FAUCET_URL = "https://faucet.devnet.aptoslabs.com"
 
 # API Key for rate limiting
 API_KEY = "aptoslabs_ZYXEWFj9U8Y_KzPc9M8Z7N42zdvZKuRWwLMARnskLzTTh"
 
-# 默认的配置文件路径
+# Default profile path
 DEFAULT_PROFILE = "task_manager_dev"
 
-# bidding_system 模块名称
+# bidding_system module name
 BIDDING_MODULE = "bidding_system"
 
-# 任务状态常量
+# Task status constants
 STATUS_PUBLISHED = 1
 STATUS_ASSIGNED = 2
 STATUS_COMPLETED = 3
 STATUS_CANCELLED = 4
 
-# 状态名称映射
+# Status name mapping
 STATUS_NAMES = {
     STATUS_PUBLISHED: "PUBLISHED",
     STATUS_ASSIGNED: "ASSIGNED", 
@@ -37,18 +37,18 @@ STATUS_NAMES = {
     STATUS_CANCELLED: "CANCELLED"
 }
 
-# --- 核心函数 ---
+# --- Core Functions ---
 
 def load_account_from_profile(profile: str) -> Account:
-    """从 .aptos/config.yaml 中加载指定profile的账户"""
+    """Load specified profile account from .aptos/config.yaml"""
     
-    # 优先使用项目本地的配置文件，然后是全局配置文件
-    # 查找项目根目录的 .aptos 配置
+    # Prioritize project local config file, then global config file
+    # Look for .aptos config in project root directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.join(current_dir, "..", "..")  # 回到项目根目录
+    project_root = os.path.join(current_dir, "..", "..")  # Back to project root directory
     local_config_path = os.path.join(project_root, ".aptos", "config.yaml")
     
-    # 也检查当前目录的 .aptos 配置
+    # Also check .aptos config in current directory
     current_config_path = os.path.join(".aptos", "config.yaml")
     global_config_path = os.path.expanduser("~/.aptos/config.yaml")
     
@@ -84,15 +84,15 @@ def load_account_from_profile(profile: str) -> Account:
 
 async def get_client_and_account(profile: str = DEFAULT_PROFILE) -> tuple[RestClient, Account]:
     """
-    创建一个Aptos REST客户端并从指定的配置文件加载账户。
+    Create an Aptos REST client and load account from specified profile.
     
-    返回:
-        一个元组 (RestClient, Account)
+    Returns:
+        A tuple (RestClient, Account)
     """
-    # 创建带有API key的ClientConfig
+    # Create ClientConfig with API key
     client_config = ClientConfig(api_key=API_KEY)
     
-    # 创建RestClient实例
+    # Create RestClient instance
     client = RestClient(NODE_URL, client_config)
     
     account = load_account_from_profile(profile)
@@ -100,73 +100,73 @@ async def get_client_and_account(profile: str = DEFAULT_PROFILE) -> tuple[RestCl
 
 
 def get_platform_address(profile: str = DEFAULT_PROFILE) -> str:
-    """获取平台地址（从配置文件中获取账户地址）"""
+    """Get platform address (get account address from config file)"""
     account = load_account_from_profile(profile)
     return str(account.address())
 
 
 def get_function_id(platform_addr: str, function_name: str) -> str:
-    """构造函数ID"""
+    """Construct function ID"""
     return f"{platform_addr}::{BIDDING_MODULE}::{function_name}"
 
 
 def format_task_id(task_id: str) -> bytes:
-    """将字符串任务ID转换为字节数组"""
+    """Convert string task ID to byte array"""
     return task_id.encode('utf-8')
 
 
 def format_status(status: int) -> str:
-    """格式化状态显示"""
+    """Format status display"""
     return STATUS_NAMES.get(status, f"UNKNOWN({status})")
 
 
 def format_amount(amount_octas: int) -> str:
-    """格式化金额显示（Octas转APT）"""
+    """Format amount display (Octas to APT)"""
     apt_amount = amount_octas / 100_000_000
     return f"{apt_amount:.8f} APT ({amount_octas} Octas)"
 
 
 def print_task_info(task_data: dict):
-    """打印任务信息"""
-    print(f"任务 ID: {task_data.get('id', 'N/A')}")
-    print(f"创建者: {task_data.get('creator', 'N/A')}")
-    print(f"描述: {task_data.get('description', 'N/A')}")
-    print(f"最大预算: {format_amount(task_data.get('max_budget', 0))}")
-    print(f"截止时间: {task_data.get('deadline', 'N/A')}")
-    print(f"状态: {format_status(task_data.get('status', 0))}")
-    print(f"创建时间: {task_data.get('created_at', 'N/A')}")
+    """Print task information"""
+    print(f"Task ID: {task_data.get('id', 'N/A')}")
+    print(f"Creator: {task_data.get('creator', 'N/A')}")
+    print(f"Description: {task_data.get('description', 'N/A')}")
+    print(f"Max Budget: {format_amount(task_data.get('max_budget', 0))}")
+    print(f"Deadline: {task_data.get('deadline', 'N/A')}")
+    print(f"Status: {format_status(task_data.get('status', 0))}")
+    print(f"Created At: {task_data.get('created_at', 'N/A')}")
     
     if task_data.get('winner') and task_data.get('winner') != "0x0":
-        print(f"中标者: {task_data.get('winner')}")
-        print(f"中标价格: {format_amount(task_data.get('winning_price', 0))}")
+        print(f"Winner: {task_data.get('winner')}")
+        print(f"Winning Price: {format_amount(task_data.get('winning_price', 0))}")
     
     if task_data.get('completed_at', 0) > 0:
-        print(f"完成时间: {task_data.get('completed_at')}")
+        print(f"Completed At: {task_data.get('completed_at')}")
 
 
 def print_bid_info(bid_data: dict):
-    """打印竞标信息"""
-    print(f"竞标者: {bid_data.get('bidder', 'N/A')}")
-    print(f"报价: {format_amount(bid_data.get('price', 0))}")
-    print(f"声誉评分: {bid_data.get('reputation_score', 0)}")
-    print(f"提交时间: {bid_data.get('timestamp', 'N/A')}")
+    """Print bid information"""
+    print(f"Bidder: {bid_data.get('bidder', 'N/A')}")
+    print(f"Price: {format_amount(bid_data.get('price', 0))}")
+    print(f"Reputation Score: {bid_data.get('reputation_score', 0)}")
+    print(f"Submitted At: {bid_data.get('timestamp', 'N/A')}")
 
 
 def print_platform_stats(stats: tuple):
-    """打印平台统计信息"""
+    """Print platform statistics"""
     total_tasks, completed_tasks, cancelled_tasks = stats
-    print(f"总任务数: {total_tasks}")
-    print(f"已完成任务: {completed_tasks}")
-    print(f"已取消任务: {cancelled_tasks}")
-    print(f"成功率: {(completed_tasks / total_tasks * 100) if total_tasks > 0 else 0:.2f}%")
+    print(f"Total Tasks: {total_tasks}")
+    print(f"Completed Tasks: {completed_tasks}")
+    print(f"Cancelled Tasks: {cancelled_tasks}")
+    print(f"Success Rate: {(completed_tasks / total_tasks * 100) if total_tasks > 0 else 0:.2f}%")
 
 
 if __name__ == '__main__':
-    # 简单的测试，验证配置加载
+    # Simple test to verify configuration loading
     try:
         account = load_account_from_profile(DEFAULT_PROFILE)
-        print(f"成功加载配置文件 '{DEFAULT_PROFILE}'")
-        print(f"账户地址: {account.address()}")
-        print(f"平台地址: {get_platform_address()}")
+        print(f"Successfully loaded profile '{DEFAULT_PROFILE}'")
+        print(f"Account Address: {account.address()}")
+        print(f"Platform Address: {get_platform_address()}")
     except (FileNotFoundError, ValueError) as e:
-        print(f"错误: {e}")
+        print(f"Error: {e}")

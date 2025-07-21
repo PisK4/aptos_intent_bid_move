@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 A2A-Aptos Bidding System - Personal Agent CLI
-Personal Agent 发布任务和管理竞标的命令行工具
+Command-line tool for Personal Agent to publish tasks and manage bidding
 """
 
 import argparse
@@ -31,36 +31,36 @@ from common_bidding import (
 
 
 class PersonalAgentCLI:
-    """Personal Agent 命令行工具"""
+    """Personal Agent command-line tool"""
     
     def __init__(self):
-        # 加载环境变量
+        # Load environment variables
         load_dotenv()
         
-        # 从环境变量或配置文件获取设置
+        # Get settings from environment variables or config file
         self.platform_address = os.getenv("PLATFORM_ADDRESS")
         self.personal_agent_profile = os.getenv("PERSONAL_AGENT_PROFILE", "personal_agent")
         self.service_agent_profile = os.getenv("SERVICE_AGENT_PROFILE", "service_agent")
         
         if not self.platform_address:
-            print("错误: 请在 .env 文件中设置 PLATFORM_ADDRESS")
+            print("Error: Please set PLATFORM_ADDRESS in .env file")
             sys.exit(1)
     
     async def initialize_platform(self):
-        """初始化竞标平台"""
+        """Initialize bidding platform"""
         print("=" * 50)
-        print("初始化竞标平台")
+        print("Initialize Bidding Platform")
         print("=" * 50)
         
         client, deployer_account = await get_client_and_account(self.personal_agent_profile)
         deployer_addr = str(deployer_account.address())
         
-        print(f"部署者: {deployer_addr}")
-        print(f"平台地址: {self.platform_address}")
+        print(f"Deployer: {deployer_addr}")
+        print(f"Platform Address: {self.platform_address}")
         print("")
         
         try:
-            # 构建交易Payload
+            # Build transaction payload
             payload = EntryFunction.natural(
                 f"{self.platform_address}::bidding_system",
                 "initialize",
@@ -70,52 +70,52 @@ class PersonalAgentCLI:
                 ],
             )
             
-            # 生成并签名交易
+            # Generate and sign transaction
             signed_transaction = await client.create_bcs_signed_transaction(
                 deployer_account, TransactionPayload(payload)
             )
             
-            # 提交交易
+            # Submit transaction
             txn_hash = await client.submit_bcs_transaction(signed_transaction)
-            print(f"交易提交中... 哈希: {txn_hash}")
+            print(f"Submitting transaction... Hash: {txn_hash}")
             
-            # 等待交易确认
+            # Wait for transaction confirmation
             await client.wait_for_transaction(txn_hash)
             tx_info = await client.transaction_by_hash(txn_hash)
             
-            print(f"平台初始化成功! 交易版本: {tx_info['version']}")
-            print("平台已准备就绪，可以开始发布任务。")
+            print(f"Platform initialization successful! Transaction version: {tx_info['version']}")
+            print("Platform is ready, you can start publishing tasks.")
             
             return True
             
         except Exception as e:
-            print(f"平台初始化失败: {e}")
+            print(f"Platform initialization failed: {e}")
             return False
         finally:
             await client.close()
     
     async def publish_task(self, task_id: str, description: str, max_budget: int, deadline_seconds: int):
-        """发布任务"""
+        """Publish task"""
         print("=" * 50)
-        print("发布任务到竞标平台")
+        print("Publish Task to Bidding Platform")
         print("=" * 50)
         
         client, creator_account = await get_client_and_account(self.personal_agent_profile)
         creator_addr = str(creator_account.address())
         
-        print(f"创建者: {creator_addr}")
-        print(f"平台地址: {self.platform_address}")
-        print(f"任务 ID: {task_id}")
-        print(f"描述: {description}")
-        print(f"最大预算: {format_amount(max_budget)}")
-        print(f"截止时间: {deadline_seconds} 秒")
+        print(f"Creator: {creator_addr}")
+        print(f"Platform Address: {self.platform_address}")
+        print(f"Task ID: {task_id}")
+        print(f"Description: {description}")
+        print(f"Max Budget: {format_amount(max_budget)}")
+        print(f"Deadline: {deadline_seconds} seconds")
         print("")
         
         try:
-            # 将任务ID转换为字节数组
+            # Convert task ID to byte array
             task_id_bytes = format_task_id(task_id)
             
-            # 构建交易Payload
+            # Build transaction payload
             payload = EntryFunction.natural(
                 f"{self.platform_address}::bidding_system",
                 "publish_task",
@@ -129,48 +129,48 @@ class PersonalAgentCLI:
                 ],
             )
             
-            # 生成并签名交易
+            # Generate and sign transaction
             signed_transaction = await client.create_bcs_signed_transaction(
                 creator_account, TransactionPayload(payload)
             )
             
-            # 提交交易
+            # Submit transaction
             txn_hash = await client.submit_bcs_transaction(signed_transaction)
-            print(f"交易提交中... 哈希: {txn_hash}")
+            print(f"Submitting transaction... Hash: {txn_hash}")
             
-            # 等待交易确认
+            # Wait for transaction confirmation
             await client.wait_for_transaction(txn_hash)
             tx_info = await client.transaction_by_hash(txn_hash)
             
-            print(f"任务发布成功! 交易版本: {tx_info['version']}")
-            print(f"资金已托管: {format_amount(max_budget)}")
+            print(f"Task published successfully! Transaction version: {tx_info['version']}")
+            print(f"Funds escrowed: {format_amount(max_budget)}")
             print("")
-            print(f"==> 任务 '{task_id}' 已发布。请记下此ID用于后续操作。 <==")
-            print("接下来服务提供商可以对该任务进行竞标。")
+            print(f"==> Task '{task_id}' has been published. Please note this ID for future operations. <==")
+            print("Service providers can now bid on this task.")
             
             return True
             
         except Exception as e:
-            print(f"任务发布失败: {e}")
+            print(f"Task publication failed: {e}")
             return False
         finally:
             await client.close()
     
     async def select_winner(self, task_id: str):
-        """选择中标者"""
+        """Select winner"""
         print("=" * 50)
-        print("选择任务中标者")
+        print("Select Task Winner")
         print("=" * 50)
         
         client, creator_account = await get_client_and_account(self.personal_agent_profile)
         creator_addr = str(creator_account.address())
         
-        print(f"执行者: {creator_addr}")
-        print(f"任务 ID: {task_id}")
+        print(f"Executor: {creator_addr}")
+        print(f"Task ID: {task_id}")
         print("")
         
         try:
-            # 构建交易Payload
+            # Build transaction payload
             task_id_bytes = format_task_id(task_id)
             payload = EntryFunction.natural(
                 f"{self.platform_address}::bidding_system",
@@ -182,45 +182,45 @@ class PersonalAgentCLI:
                 ],
             )
             
-            # 生成并签名交易
+            # Generate and sign transaction
             signed_transaction = await client.create_bcs_signed_transaction(
                 creator_account, TransactionPayload(payload)
             )
             
-            # 提交交易
+            # Submit transaction
             txn_hash = await client.submit_bcs_transaction(signed_transaction)
-            print(f"交易提交中... 哈希: {txn_hash}")
+            print(f"Submitting transaction... Hash: {txn_hash}")
             
-            # 等待交易确认
+            # Wait for transaction confirmation
             await client.wait_for_transaction(txn_hash)
             tx_info = await client.transaction_by_hash(txn_hash)
             
-            print(f"中标者选择成功! 交易版本: {tx_info['version']}")
-            print("任务已分配给中标者。")
+            print(f"Winner selection successful! Transaction version: {tx_info['version']}")
+            print("Task has been assigned to the winner.")
             
             return True
             
         except Exception as e:
-            print(f"选择中标者失败: {e}")
+            print(f"Winner selection failed: {e}")
             return False
         finally:
             await client.close()
     
     async def complete_task(self, task_id: str):
-        """完成任务 (由Service Agent执行)"""
+        """Complete task (executed by Service Agent)"""
         print("=" * 50)
-        print("完成任务")
+        print("Complete Task")
         print("=" * 50)
         
         client, service_account = await get_client_and_account(self.service_agent_profile)
         service_addr = str(service_account.address())
         
         print(f"Service Agent: {service_addr}")
-        print(f"任务 ID: {task_id}")
+        print(f"Task ID: {task_id}")
         print("")
         
         try:
-            # 构建交易Payload
+            # Build transaction payload
             task_id_bytes = format_task_id(task_id)
             payload = EntryFunction.natural(
                 f"{self.platform_address}::bidding_system",
@@ -232,50 +232,50 @@ class PersonalAgentCLI:
                 ],
             )
             
-            # 生成并签名交易
+            # Generate and sign transaction
             signed_transaction = await client.create_bcs_signed_transaction(
                 service_account, TransactionPayload(payload)
             )
             
-            # 提交交易
+            # Submit transaction
             txn_hash = await client.submit_bcs_transaction(signed_transaction)
-            print(f"交易提交中... 哈希: {txn_hash}")
+            print(f"Submitting transaction... Hash: {txn_hash}")
             
-            # 等待交易确认
+            # Wait for transaction confirmation
             await client.wait_for_transaction(txn_hash)
             tx_info = await client.transaction_by_hash(txn_hash)
             
-            print(f"任务完成成功! 交易版本: {tx_info['version']}")
-            print("资金已结算给Service Agent。")
+            print(f"Task completion successful! Transaction version: {tx_info['version']}")
+            print("Funds have been settled to Service Agent.")
             
             return True
             
         except Exception as e:
-            print(f"完成任务失败: {e}")
+            print(f"Task completion failed: {e}")
             return False
         finally:
             await client.close()
     
     async def get_task_status(self, task_id: str):
-        """查询任务状态"""
+        """Query task status"""
         print("=" * 50)
-        print("查询任务状态")
+        print("Query Task Status")
         print("=" * 50)
         
         client, _ = await get_client_and_account(self.personal_agent_profile)
         
         try:
-            # 获取 BiddingPlatform 资源
+            # Get BiddingPlatform resource
             resource_type = f"{self.platform_address}::bidding_system::BiddingPlatform"
             resource = await client.account_resource(
                 AccountAddress.from_str(self.platform_address),
                 resource_type
             )
             
-            # 获取 tasks 表的句柄
+            # Get tasks table handle
             tasks_handle = resource["data"]["tasks"]["inner"]["buckets"]["inner"]["buckets"][0]["inner"]["kvs"][0]["key"]
             
-            # 查询具体任务
+            # Query specific task
             key_type = "vector<u8>"
             value_type = f"{self.platform_address}::bidding_system::Task"
             task_id_hex = task_id.encode('utf-8').hex()
@@ -287,65 +287,65 @@ class PersonalAgentCLI:
                 task_id_hex
             )
             
-            print(f"任务 ID: {task_id}")
+            print(f"Task ID: {task_id}")
             print_task_info(task_data)
             
-            # 显示竞标信息
+            # Display bidding information
             bids = task_data.get('bids', [])
             if bids:
-                print(f"竞标数量: {len(bids)}")
-                print("竞标列表:")
+                print(f"Number of bids: {len(bids)}")
+                print("Bid list:")
                 for i, bid in enumerate(bids, 1):
-                    print(f"  [{i}] 竞标者: {bid['bidder']}")
-                    print(f"      报价: {format_amount(bid['price'])}")
-                    print(f"      声誉: {bid['reputation_score']}")
-                    print(f"      时间: {bid['timestamp']}")
+                    print(f"  [{i}] Bidder: {bid['bidder']}")
+                    print(f"      Price: {format_amount(bid['price'])}")
+                    print(f"      Reputation: {bid['reputation_score']}")
+                    print(f"      Time: {bid['timestamp']}")
                     print()
             else:
-                print("竞标列表: 无竞标或已清空")
+                print("Bid list: No bids or cleared")
             
             return True
             
         except Exception as e:
-            print(f"查询任务状态失败: {e}")
+            print(f"Task status query failed: {e}")
             return False
         finally:
             await client.close()
 
 
 async def main():
-    """主入口函数"""
+    """Main entry function"""
     cli = PersonalAgentCLI()
     
     parser = argparse.ArgumentParser(
-        description="A2A-Aptos Personal Agent CLI - 与竞标平台交互的工具"
+        description="A2A-Aptos Personal Agent CLI - Tool for interacting with bidding platform"
     )
-    subparsers = parser.add_subparsers(dest="command", required=True, help="可用的子命令")
+    subparsers = parser.add_subparsers(dest="command", required=True, help="Available subcommands")
     
-    # 初始化平台
-    subparsers.add_parser("init", help="初始化平台 (仅需在部署后执行一次)")
+    # Initialize platform
+    subparsers.add_parser("init", help="Initialize platform (only needs to be executed once after deployment)")
     
-    # 发布任务
-    p_publish = subparsers.add_parser("publish", help="发布一个新任务")
-    p_publish.add_argument("description", type=str, help="任务的详细描述")
+    # Publish task
+    p_publish = subparsers.add_parser("publish", help="Publish a new task")
+    p_publish.add_argument("description", type=str, help="Detailed description of the task")
     p_publish.add_argument("--budget", type=int, required=True, 
-                           help="最高预算 (单位: Octas, e.g., 100000000 代表 1 APT)")
+                           help="Maximum budget (unit: Octas, e.g., 100000000 represents 1 APT)")
     p_publish.add_argument("--deadline", type=int, default=3600,
-                           help="竞标截止时间 (从当前开始的秒数，默认为3600秒)")
+                           help="Bidding deadline (seconds from now, default is 3600 seconds)")
     p_publish.add_argument("--task-id", type=str,
-                           help="任务ID (不指定则自动生成)")
+                           help="Task ID (auto-generated if not specified)")
     
-    # 选择中标者
-    p_select = subparsers.add_parser("select-winner", help="为任务选择一个中标者")
-    p_select.add_argument("task_id", type=str, help="从 'publish' 命令获取的任务 ID")
+    # Select winner
+    p_select = subparsers.add_parser("select-winner", help="Select a winner for the task")
+    p_select.add_argument("task_id", type=str, help="Task ID obtained from 'publish' command")
     
-    # 完成任务
-    p_complete = subparsers.add_parser("complete", help="标记任务完成 (由中标的 Service Agent 执行)")
-    p_complete.add_argument("task_id", type=str, help="任务 ID")
+    # Complete task
+    p_complete = subparsers.add_parser("complete", help="Mark task as completed (executed by winning Service Agent)")
+    p_complete.add_argument("task_id", type=str, help="Task ID")
     
-    # 查询状态
-    p_status = subparsers.add_parser("status", help="查询任务的详细状态")
-    p_status.add_argument("task_id", type=str, help="任务 ID")
+    # Query status
+    p_status = subparsers.add_parser("status", help="Query detailed status of the task")
+    p_status.add_argument("task_id", type=str, help="Task ID")
     
     args = parser.parse_args()
     
@@ -362,9 +362,9 @@ async def main():
         elif args.command == "status":
             await cli.get_task_status(args.task_id)
     except KeyboardInterrupt:
-        print("\n操作已取消")
+        print("\nOperation cancelled")
     except Exception as e:
-        print(f"执行失败: {e}")
+        print(f"Execution failed: {e}")
         sys.exit(1)
 
 

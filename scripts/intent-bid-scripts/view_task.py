@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Aptos Bidding System - 查看任务脚本
-查询任务详细信息、竞标情况和状态
+Aptos Bidding System - View Task Script
+Query task details, bidding status and information
 """
 
 import argparse
@@ -21,22 +21,22 @@ async def view_task(
     platform_addr: str,
     task_id: str,
 ):
-    """查看任务详细信息"""
+    """View task details"""
     
     client, account = await get_client_and_account(profile)
     
     print("=" * 50)
-    print("查看任务信息")
+    print("View Task Information")
     print("=" * 50)
-    print(f"平台地址: {platform_addr}")
-    print(f"任务 ID: {task_id}")
+    print(f"Platform Address: {platform_addr}")
+    print(f"Task ID: {task_id}")
     print("")
     
     try:
-        # 将任务ID转换为十六进制格式
+        # Convert task ID to hexadecimal format
         task_id_hex = "0x" + task_id.encode('utf-8').hex()
         
-        # 调用 get_task view 函数
+        # Call get_task view function
         result = await client.view(
             f"{platform_addr}::bidding_system::get_task",
             [],
@@ -44,16 +44,16 @@ async def view_task(
         )
         
         if result:
-            # 假设返回的是任务结构体数据
-            task_data = result  # 直接使用结果，不是第一个元素
+            # Assume returned data is task struct data
+            task_data = result  # Use result directly, not first element
             
-            print("任务详细信息:")
+            print("Task Details:")
             print("-" * 30)
-            # 暂时直接打印原始数据，因为结构可能不同
-            print(f"原始任务数据: {task_data}")
+            # Print raw data for now as structure may differ
+            print(f"Raw task data: {task_data}")
             print("")
             
-            # 获取竞标信息
+            # Get bidding information
             bid_result = await client.view(
                 f"{platform_addr}::bidding_system::get_task_bids",
                 [],
@@ -62,18 +62,18 @@ async def view_task(
             
             if bid_result:
                 bids = bid_result
-                print(f"竞标信息: {bids}")
+                print(f"Bidding information: {bids}")
                 print("")
             else:
-                print("当前没有竞标信息")
+                print("No bidding information available")
         else:
-            print("任务未找到")
+            print("Task not found")
             return False
         
         return True
         
     except Exception as e:
-        print(f"查询任务失败: {e}")
+        print(f"Task query failed: {e}")
         return False
     finally:
         await client.close()
@@ -84,15 +84,15 @@ async def check_task_exists(
     platform_addr: str,
     task_id: str,
 ):
-    """检查任务是否存在"""
+    """Check if task exists"""
     
     client, account = await get_client_and_account(profile)
     
     try:
-        # 将任务ID转换为十六进制格式
+        # Convert task ID to hexadecimal format
         task_id_hex = "0x" + task_id.encode('utf-8').hex()
         
-        # 调用 task_exists view 函数
+        # Call task_exists view function
         result = await client.view(
             f"{platform_addr}::bidding_system::task_exists",
             [],
@@ -100,54 +100,54 @@ async def check_task_exists(
         )
         
         exists = result if result else False
-        print(f"任务 {task_id} 存在: {exists}")
+        print(f"Task {task_id} exists: {exists}")
         return exists
         
     except Exception as e:
-        print(f"检查任务存在性失败: {e}")
+        print(f"Failed to check task existence: {e}")
         return False
     finally:
         await client.close()
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="查看任务信息")
-    parser.add_argument("task_id", type=str, help="任务的唯一ID")
+    parser = argparse.ArgumentParser(description="View task information")
+    parser.add_argument("task_id", type=str, help="Unique ID of the task")
     parser.add_argument(
         "--profile",
         default=DEFAULT_PROFILE,
-        help=f"指定 Aptos CLI 配置文件 (默认: {DEFAULT_PROFILE})"
+        help=f"Specify Aptos CLI profile (default: {DEFAULT_PROFILE})"
     )
     parser.add_argument(
         "--platform",
-        help="平台地址 (默认从profile获取)"
+        help="Platform address (default from profile)"
     )
     parser.add_argument(
         "--check-exists",
         action="store_true",
-        help="仅检查任务是否存在"
+        help="Only check if task exists"
     )
     
     args = parser.parse_args()
     
-    # 获取平台地址
+    # Get platform address
     platform_addr = args.platform if args.platform else get_platform_address(DEFAULT_PROFILE)
     
-    # 验证参数
+    # Validate parameters
     if len(args.task_id.strip()) == 0:
-        print("错误: 任务ID不能为空")
+        print("Error: Task ID cannot be empty")
         return
     
-    # 执行查询
+    # Execute query
     if args.check_exists:
         await check_task_exists(args.profile, platform_addr, args.task_id)
     else:
         success = await view_task(args.profile, platform_addr, args.task_id)
         
         if success:
-            print("任务查询完成!")
+            print("Task query complete!")
         else:
-            print("任务查询失败!")
+            print("Task query failed!")
 
 
 if __name__ == "__main__":

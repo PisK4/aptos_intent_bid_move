@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Aptos Bidding System - 竞标脚本
-Service Agent 对发布的任务进行竞标
+Aptos Bidding System - Bidding Script
+Service Agent bids on published tasks
 """
 
 import argparse
@@ -29,30 +29,30 @@ async def place_bid(
     bid_price: int,
     reputation_score: int,
 ):
-    """对任务进行竞标"""
+    """Bid on task"""
     
     client, bidder_account = await get_client_and_account(profile)
     bidder_addr = str(bidder_account.address())
     
     print("=" * 50)
-    print("提交竞标")
+    print("Submit Bid")
     print("=" * 50)
-    print(f"竞标者: {bidder_addr}")
-    print(f"平台地址: {platform_addr}")
-    print(f"任务 ID: {task_id}")
-    print(f"竞标价格: {format_amount(bid_price)}")
-    print(f"声誉评分: {reputation_score}")
+    print(f"Bidder: {bidder_addr}")
+    print(f"Platform Address: {platform_addr}")
+    print(f"Task ID: {task_id}")
+    print(f"Bid Price: {format_amount(bid_price)}")
+    print(f"Reputation Score: {reputation_score}")
     print("")
     
     try:
-        # 将任务ID转换为字节数组
+        # Convert task ID to byte array
         task_id_bytes = format_task_id(task_id)
         
-        # 构建交易Payload
+        # Build transaction payload
         payload = EntryFunction.natural(
             f"{platform_addr}::bidding_system",
             "place_bid",
-            [], # 无类型参数
+            [], # No type parameters
             [
                 TransactionArgument(AccountAddress.from_str(platform_addr), Serializer.struct),
                 TransactionArgument(task_id_bytes, Serializer.sequence_serializer(Serializer.u8)),
@@ -61,70 +61,70 @@ async def place_bid(
             ],
         )
         
-        # 生成并签名交易
+        # Generate and sign transaction
         signed_transaction = await client.create_bcs_signed_transaction(
             bidder_account, TransactionPayload(payload)
         )
         
-        # 提交交易
+        # Submit transaction
         txn_hash = await client.submit_bcs_transaction(signed_transaction)
-        print(f"交易提交中... 哈希: {txn_hash}")
+        print(f"Submitting transaction... Hash: {txn_hash}")
         
-        # 等待交易确认
+        # Wait for transaction confirmation
         await client.wait_for_transaction(txn_hash)
         tx_info = await client.transaction_by_hash(txn_hash)
         
-        print(f"竞标提交成功! 交易版本: {tx_info['version']}")
-        print(f"竞标价格: {format_amount(bid_price)}")
+        print(f"Bid submission successful! Transaction version: {tx_info['version']}")
+        print(f"Bid Price: {format_amount(bid_price)}")
         print("")
-        print("等待任务创建者选择中标者...")
+        print("Waiting for task creator to select winner...")
         
         return True
         
     except Exception as e:
-        print(f"竞标失败: {e}")
+        print(f"Bid failed: {e}")
         return False
     finally:
         await client.close()
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="对任务进行竞标")
-    parser.add_argument("task_id", type=str, help="任务的唯一ID")
-    parser.add_argument("bid_price", type=int, help="竞标价格 (Octas)")
-    parser.add_argument("reputation_score", type=int, help="声誉评分 (0-100)")
+    parser = argparse.ArgumentParser(description="Bid on task")
+    parser.add_argument("task_id", type=str, help="Unique ID of the task")
+    parser.add_argument("bid_price", type=int, help="Bid price (Octas)")
+    parser.add_argument("reputation_score", type=int, help="Reputation score (0-100)")
     parser.add_argument(
         "--profile",
         default=DEFAULT_PROFILE,
-        help=f"指定 Aptos CLI 配置文件 (默认: {DEFAULT_PROFILE})"
+        help=f"Specify Aptos CLI profile (default: {DEFAULT_PROFILE})"
     )
     parser.add_argument(
         "--platform",
-        help="平台地址 (默认从profile获取)"
+        help="Platform address (default from profile)"
     )
     
     args = parser.parse_args()
     
-    # 获取平台地址
+    # Get platform address
     platform_addr = args.platform if args.platform else get_platform_address(DEFAULT_PROFILE)
     
-    # 验证参数
+    # Validate parameters
     if args.bid_price <= 0:
-        print("错误: 竞标价格必须大于0")
+        print("Error: Bid price must be greater than 0")
         return
     
     if args.reputation_score < 0 or args.reputation_score > 100:
-        print("错误: 声誉评分必须在0-100之间")
+        print("Error: Reputation score must be between 0-100")
         return
     
     if len(args.task_id.strip()) == 0:
-        print("错误: 任务ID不能为空")
+        print("Error: Task ID cannot be empty")
         return
     
     print(f"args.profile: {args.profile}")
     print(f"platform_addr: {platform_addr}")
     
-    # 提交竞标
+    # Submit bid
     success = await place_bid(
         args.profile,
         platform_addr,
@@ -134,9 +134,9 @@ async def main():
     )
     
     if success:
-        print("竞标提交完成!")
+        print("Bid submission complete!")
     else:
-        print("竞标提交失败!")
+        print("Bid submission failed!")
 
 
 if __name__ == "__main__":
